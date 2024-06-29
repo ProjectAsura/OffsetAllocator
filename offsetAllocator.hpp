@@ -6,89 +6,90 @@
 #include <cstdint>
 
 
-namespace OffsetAllocator
-{
-    // 16 bit offsets mode will halve the metadata storage cost
-    // But it only supports up to 65536 maximum allocation count
+namespace OffsetAllocator {
+
+// 16 bit offsets mode will halve the metadata storage cost
+// But it only supports up to 65536 maximum allocation count
 #ifdef USE_16_BIT_NODE_INDICES
-    typedef uint16_t NodeIndex;
+typedef uint16_t NodeIndex;
 #else
-    typedef uint32_t NodeIndex;
+typedef uint32_t NodeIndex;
 #endif
 
-    static constexpr uint32_t NUM_TOP_BINS = 32;
-    static constexpr uint32_t BINS_PER_LEAF = 8;
-    static constexpr uint32_t TOP_BINS_INDEX_SHIFT = 3;
-    static constexpr uint32_t LEAF_BINS_INDEX_MASK = 0x7;
-    static constexpr uint32_t NUM_LEAF_BINS = NUM_TOP_BINS * BINS_PER_LEAF;
+static constexpr uint32_t NUM_TOP_BINS          = 32;
+static constexpr uint32_t BINS_PER_LEAF         = 8;
+static constexpr uint32_t TOP_BINS_INDEX_SHIFT  = 3;
+static constexpr uint32_t LEAF_BINS_INDEX_MASK  = 0x7;
+static constexpr uint32_t NUM_LEAF_BINS         = NUM_TOP_BINS * BINS_PER_LEAF;
 
-    struct Allocation
+struct Allocation
+{
+    static constexpr uint32_t NO_SPACE = 0xffffffff;
+
+    uint32_t  offset   = NO_SPACE;
+    NodeIndex metadata = NO_SPACE; // internal: node index
+};
+
+struct StorageReport
+{
+    uint32_t totalFreeSpace;
+    uint32_t largestFreeRegion;
+};
+
+struct StorageReportFull
+{
+    struct Region
     {
-        static constexpr uint32_t NO_SPACE = 0xffffffff;
+        uint32_t size;
+        uint32_t count;
+    };
         
-        uint32_t offset = NO_SPACE;
-        NodeIndex metadata = NO_SPACE; // internal: node index
+    Region freeRegions[NUM_LEAF_BINS];
+};
+
+class Allocator
+{
+public:
+    Allocator(uint32_t size, uint32_t maxAllocs = 128 * 1024);
+    Allocator(Allocator &&other);
+    ~Allocator();
+    void reset();
+
+    Allocation allocate(uint32_t size);
+    void free(Allocation allocation);
+
+    uint32_t allocationSize(Allocation allocation) const;
+    StorageReport storageReport() const;
+    StorageReportFull storageReportFull() const;
+
+private:
+    uint32_t insertNodeIntoBin(uint32_t size, uint32_t dataOffset);
+    void removeNodeFromBin(uint32_t nodeIndex);
+
+    struct Node
+    {
+        static constexpr NodeIndex unused = 0xffffffff;
+
+        uint32_t    dataOffset      = 0;
+        uint32_t    dataSize        = 0;
+        NodeIndex   binListPrev     = unused;
+        NodeIndex   binListNext     = unused;
+        NodeIndex   neighborPrev    = unused;
+        NodeIndex   neighborNext    = unused;
+        bool        used            = false; // TODO: Merge as bit flag
     };
 
-    struct StorageReport
-    {
-        uint32_t totalFreeSpace;
-        uint32_t largestFreeRegion;
-    };
+    uint32_t    m_size;
+    uint32_t    m_maxAllocs;
+    uint32_t    m_freeStorage;
 
-    struct StorageReportFull
-    {
-        struct Region
-        {
-            uint32_t size;
-            uint32_t count;
-        };
-        
-        Region freeRegions[NUM_LEAF_BINS];
-    };
+    uint32_t    m_usedBinsTop;
+    uint8_t     m_usedBins[NUM_TOP_BINS];
+    NodeIndex   m_binIndices[NUM_LEAF_BINS];
+ 
+    Node*       m_nodes;
+    NodeIndex*  m_freeNodes;
+    uint32_t    m_freeOffset;
+};
 
-    class Allocator
-    {
-    public:
-        Allocator(uint32_t size, uint32_t maxAllocs = 128 * 1024);
-        Allocator(Allocator &&other);
-        ~Allocator();
-        void reset();
-        
-        Allocation allocate(uint32_t size);
-        void free(Allocation allocation);
-
-        uint32_t allocationSize(Allocation allocation) const;
-        StorageReport storageReport() const;
-        StorageReportFull storageReportFull() const;
-        
-    private:
-        uint32_t insertNodeIntoBin(uint32_t size, uint32_t dataOffset);
-        void removeNodeFromBin(uint32_t nodeIndex);
-
-        struct Node
-        {
-            static constexpr NodeIndex unused = 0xffffffff;
-            
-            uint32_t dataOffset = 0;
-            uint32_t dataSize = 0;
-            NodeIndex binListPrev = unused;
-            NodeIndex binListNext = unused;
-            NodeIndex neighborPrev = unused;
-            NodeIndex neighborNext = unused;
-            bool used = false; // TODO: Merge as bit flag
-        };
-    
-        uint32_t m_size;
-        uint32_t m_maxAllocs;
-        uint32_t m_freeStorage;
-
-        uint32_t m_usedBinsTop;
-        uint8_t m_usedBins[NUM_TOP_BINS];
-        NodeIndex m_binIndices[NUM_LEAF_BINS];
-                
-        Node* m_nodes;
-        NodeIndex* m_freeNodes;
-        uint32_t m_freeOffset;
-    };
-}
+} // namespace OffsetAllocator
