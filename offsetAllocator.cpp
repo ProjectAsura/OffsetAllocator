@@ -23,7 +23,7 @@
 
 namespace OffsetAllocator
 {
-    inline uint32 lzcnt_nonzero(uint32 v)
+    inline uint32_t lzcnt_nonzero(uint32_t v)
     {
 #ifdef _MSC_VER
         unsigned long retVal;
@@ -34,7 +34,7 @@ namespace OffsetAllocator
 #endif
     }
 
-    inline uint32 tzcnt_nonzero(uint32 v)
+    inline uint32_t tzcnt_nonzero(uint32_t v)
     {
 #ifdef _MSC_VER
         unsigned long retVal;
@@ -47,16 +47,16 @@ namespace OffsetAllocator
 
     namespace SmallFloat
     {
-        static constexpr uint32 MANTISSA_BITS = 3;
-        static constexpr uint32 MANTISSA_VALUE = 1 << MANTISSA_BITS;
-        static constexpr uint32 MANTISSA_MASK = MANTISSA_VALUE - 1;
+        static constexpr uint32_t MANTISSA_BITS = 3;
+        static constexpr uint32_t MANTISSA_VALUE = 1 << MANTISSA_BITS;
+        static constexpr uint32_t MANTISSA_MASK = MANTISSA_VALUE - 1;
     
         // Bin sizes follow floating point (exponent + mantissa) distribution (piecewise linear log approx)
         // This ensures that for each size class, the average overhead percentage stays the same
-        uint32 uintToFloatRoundUp(uint32 size)
+        uint32_t uintToFloatRoundUp(uint32_t size)
         {
-            uint32 exp = 0;
-            uint32 mantissa = 0;
+            uint32_t exp = 0;
+            uint32_t mantissa = 0;
             
             if (size < MANTISSA_VALUE)
             {
@@ -66,14 +66,14 @@ namespace OffsetAllocator
             else
             {
                 // Normalized: Hidden high bit always 1. Not stored. Just like float.
-                uint32 leadingZeros = lzcnt_nonzero(size);
-                uint32 highestSetBit = 31 - leadingZeros;
+                uint32_t leadingZeros = lzcnt_nonzero(size);
+                uint32_t highestSetBit = 31 - leadingZeros;
                 
-                uint32 mantissaStartBit = highestSetBit - MANTISSA_BITS;
+                uint32_t mantissaStartBit = highestSetBit - MANTISSA_BITS;
                 exp = mantissaStartBit + 1;
                 mantissa = (size >> mantissaStartBit) & MANTISSA_MASK;
                 
-                uint32 lowBitsMask = (1 << mantissaStartBit) - 1;
+                uint32_t lowBitsMask = (1 << mantissaStartBit) - 1;
                 
                 // Round up!
                 if ((size & lowBitsMask) != 0)
@@ -83,10 +83,10 @@ namespace OffsetAllocator
             return (exp << MANTISSA_BITS) + mantissa; // + allows mantissa->exp overflow for round up
         }
 
-        uint32 uintToFloatRoundDown(uint32 size)
+        uint32_t uintToFloatRoundDown(uint32_t size)
         {
-            uint32 exp = 0;
-            uint32 mantissa = 0;
+            uint32_t exp = 0;
+            uint32_t mantissa = 0;
             
             if (size < MANTISSA_VALUE)
             {
@@ -96,10 +96,10 @@ namespace OffsetAllocator
             else
             {
                 // Normalized: Hidden high bit always 1. Not stored. Just like float.
-                uint32 leadingZeros = lzcnt_nonzero(size);
-                uint32 highestSetBit = 31 - leadingZeros;
+                uint32_t leadingZeros = lzcnt_nonzero(size);
+                uint32_t highestSetBit = 31 - leadingZeros;
                 
-                uint32 mantissaStartBit = highestSetBit - MANTISSA_BITS;
+                uint32_t mantissaStartBit = highestSetBit - MANTISSA_BITS;
                 exp = mantissaStartBit + 1;
                 mantissa = (size >> mantissaStartBit) & MANTISSA_MASK;
             }
@@ -107,10 +107,10 @@ namespace OffsetAllocator
             return (exp << MANTISSA_BITS) | mantissa;
         }
     
-        uint32 floatToUint(uint32 floatValue)
+        uint32_t floatToUint(uint32_t floatValue)
         {
-            uint32 exponent = floatValue >> MANTISSA_BITS;
-            uint32 mantissa = floatValue & MANTISSA_MASK;
+            uint32_t exponent = floatValue >> MANTISSA_BITS;
+            uint32_t mantissa = floatValue & MANTISSA_MASK;
             if (exponent == 0)
             {
                 // Denorms
@@ -124,17 +124,17 @@ namespace OffsetAllocator
     }
 
     // Utility functions
-    uint32 findLowestSetBitAfter(uint32 bitMask, uint32 startBitIndex)
+    uint32_t findLowestSetBitAfter(uint32_t bitMask, uint32_t startBitIndex)
     {
-        uint32 maskBeforeStartIndex = (1 << startBitIndex) - 1;
-        uint32 maskAfterStartIndex = ~maskBeforeStartIndex;
-        uint32 bitsAfter = bitMask & maskAfterStartIndex;
+        uint32_t maskBeforeStartIndex = (1 << startBitIndex) - 1;
+        uint32_t maskAfterStartIndex = ~maskBeforeStartIndex;
+        uint32_t bitsAfter = bitMask & maskAfterStartIndex;
         if (bitsAfter == 0) return Allocation::NO_SPACE;
         return tzcnt_nonzero(bitsAfter);
     }
 
     // Allocator...
-    Allocator::Allocator(uint32 size, uint32 maxAllocs) :
+    Allocator::Allocator(uint32_t size, uint32_t maxAllocs) :
         m_size(size),
         m_maxAllocs(maxAllocs),
         m_nodes(nullptr),
@@ -156,7 +156,7 @@ namespace OffsetAllocator
         m_freeNodes(other.m_freeNodes),
         m_freeOffset(other.m_freeOffset)
     {
-        memcpy(m_usedBins, other.m_usedBins, sizeof(uint8) * NUM_TOP_BINS);
+        memcpy(m_usedBins, other.m_usedBins, sizeof(uint8_t) * NUM_TOP_BINS);
         memcpy(m_binIndices, other.m_binIndices, sizeof(NodeIndex) * NUM_LEAF_BINS);
 
         other.m_nodes = nullptr;
@@ -172,10 +172,10 @@ namespace OffsetAllocator
         m_usedBinsTop = 0;
         m_freeOffset = m_maxAllocs - 1;
 
-        for (uint32 i = 0 ; i < NUM_TOP_BINS; i++)
+        for (uint32_t i = 0 ; i < NUM_TOP_BINS; i++)
             m_usedBins[i] = 0;
         
-        for (uint32 i = 0 ; i < NUM_LEAF_BINS; i++)
+        for (uint32_t i = 0 ; i < NUM_LEAF_BINS; i++)
             m_binIndices[i] = Node::unused;
         
         if (m_nodes) delete[] m_nodes;
@@ -185,7 +185,7 @@ namespace OffsetAllocator
         m_freeNodes = new NodeIndex[m_maxAllocs];
         
         // Freelist is a stack. Nodes in inverse order so that [0] pops first.
-        for (uint32 i = 0; i < m_maxAllocs; i++)
+        for (uint32_t i = 0; i < m_maxAllocs; i++)
         {
             m_freeNodes[i] = m_maxAllocs - i - 1;
         }
@@ -201,7 +201,7 @@ namespace OffsetAllocator
         delete[] m_freeNodes;
     }
     
-    Allocation Allocator::allocate(uint32 size)
+    Allocation Allocator::allocate(uint32_t size)
     {
         // Out of allocations?
         if (m_freeOffset == 0)
@@ -211,13 +211,13 @@ namespace OffsetAllocator
         
         // Round up to bin index to ensure that alloc >= bin
         // Gives us min bin index that fits the size
-        uint32 minBinIndex = SmallFloat::uintToFloatRoundUp(size);
+        uint32_t minBinIndex = SmallFloat::uintToFloatRoundUp(size);
         
-        uint32 minTopBinIndex = minBinIndex >> TOP_BINS_INDEX_SHIFT;
-        uint32 minLeafBinIndex = minBinIndex & LEAF_BINS_INDEX_MASK;
+        uint32_t minTopBinIndex = minBinIndex >> TOP_BINS_INDEX_SHIFT;
+        uint32_t minLeafBinIndex = minBinIndex & LEAF_BINS_INDEX_MASK;
         
-        uint32 topBinIndex = minTopBinIndex;
-        uint32 leafBinIndex = Allocation::NO_SPACE;
+        uint32_t topBinIndex = minTopBinIndex;
+        uint32_t leafBinIndex = Allocation::NO_SPACE;
 
         // If top bin exists, scan its leaf bin. This can fail (NO_SPACE).
         if (m_usedBinsTop & (1 << topBinIndex))
@@ -241,12 +241,12 @@ namespace OffsetAllocator
             leafBinIndex = tzcnt_nonzero(m_usedBins[topBinIndex]);
         }
                 
-        uint32 binIndex = (topBinIndex << TOP_BINS_INDEX_SHIFT) | leafBinIndex;
+        uint32_t binIndex = (topBinIndex << TOP_BINS_INDEX_SHIFT) | leafBinIndex;
         
         // Pop the top node of the bin. Bin top = node.next.
-        uint32 nodeIndex = m_binIndices[binIndex];
+        uint32_t nodeIndex = m_binIndices[binIndex];
         Node& node = m_nodes[nodeIndex];
-        uint32 nodeTotalSize = node.dataSize;
+        uint32_t nodeTotalSize = node.dataSize;
         node.dataSize = size;
         node.used = true;
         m_binIndices[binIndex] = node.binListNext;
@@ -271,10 +271,10 @@ namespace OffsetAllocator
         }
         
         // Push back reminder N elements to a lower bin
-        uint32 reminderSize = nodeTotalSize - size;
+        uint32_t reminderSize = nodeTotalSize - size;
         if (reminderSize > 0)
         {
-            uint32 newNodeIndex = insertNodeIntoBin(reminderSize, node.dataOffset + size);
+            uint32_t newNodeIndex = insertNodeIntoBin(reminderSize, node.dataOffset + size);
             
             // Link nodes next to each other so that we can merge them later if both are free
             // And update the old next neighbor to point to the new node (in middle)
@@ -292,15 +292,15 @@ namespace OffsetAllocator
         ASSERT(allocation.metadata != Allocation::NO_SPACE);
         if (!m_nodes) return;
         
-        uint32 nodeIndex = allocation.metadata;
+        uint32_t nodeIndex = allocation.metadata;
         Node& node = m_nodes[nodeIndex];
         
         // Double delete check
         ASSERT(node.used == true);
         
         // Merge with neighbors...
-        uint32 offset = node.dataOffset;
-        uint32 size = node.dataSize;
+        uint32_t offset = node.dataOffset;
+        uint32_t size = node.dataSize;
         
         if ((node.neighborPrev != Node::unused) && (m_nodes[node.neighborPrev].used == false))
         {
@@ -329,8 +329,8 @@ namespace OffsetAllocator
             node.neighborNext = nextNode.neighborNext;
         }
 
-        uint32 neighborNext = node.neighborNext;
-        uint32 neighborPrev = node.neighborPrev;
+        uint32_t neighborNext = node.neighborNext;
+        uint32_t neighborPrev = node.neighborPrev;
         
         // Insert the removed node to freelist
 #ifdef DEBUG_VERBOSE
@@ -339,7 +339,7 @@ namespace OffsetAllocator
         m_freeNodes[++m_freeOffset] = nodeIndex;
 
         // Insert the (combined) free node to bin
-        uint32 combinedNodeIndex = insertNodeIntoBin(size, offset);
+        uint32_t combinedNodeIndex = insertNodeIntoBin(size, offset);
 
         // Connect neighbors with the new combined node
         if (neighborNext != Node::unused)
@@ -354,13 +354,13 @@ namespace OffsetAllocator
         }
     }
 
-    uint32 Allocator::insertNodeIntoBin(uint32 size, uint32 dataOffset)
+    uint32_t Allocator::insertNodeIntoBin(uint32_t size, uint32_t dataOffset)
     {
         // Round down to bin index to ensure that bin >= alloc
-        uint32 binIndex = SmallFloat::uintToFloatRoundDown(size);
+        uint32_t binIndex = SmallFloat::uintToFloatRoundDown(size);
         
-        uint32 topBinIndex = binIndex >> TOP_BINS_INDEX_SHIFT;
-        uint32 leafBinIndex = binIndex & LEAF_BINS_INDEX_MASK;
+        uint32_t topBinIndex = binIndex >> TOP_BINS_INDEX_SHIFT;
+        uint32_t leafBinIndex = binIndex & LEAF_BINS_INDEX_MASK;
         
         // Bin was empty before?
         if (m_binIndices[binIndex] == Node::unused)
@@ -371,8 +371,8 @@ namespace OffsetAllocator
         }
         
         // Take a freelist node and insert on top of the bin linked list (next = old top)
-        uint32 topNodeIndex = m_binIndices[binIndex];
-        uint32 nodeIndex = m_freeNodes[m_freeOffset--];
+        uint32_t topNodeIndex = m_binIndices[binIndex];
+        uint32_t nodeIndex = m_freeNodes[m_freeOffset--];
 #ifdef DEBUG_VERBOSE
         printf("Getting node %u from freelist[%u]\n", nodeIndex, m_freeOffset + 1);
 #endif
@@ -388,7 +388,7 @@ namespace OffsetAllocator
         return nodeIndex;
     }
     
-    void Allocator::removeNodeFromBin(uint32 nodeIndex)
+    void Allocator::removeNodeFromBin(uint32_t nodeIndex)
     {
         Node &node = m_nodes[nodeIndex];
         
@@ -403,10 +403,10 @@ namespace OffsetAllocator
             // Hard case: We are the first node in a bin. Find the bin.
             
             // Round down to bin index to ensure that bin >= alloc
-            uint32 binIndex = SmallFloat::uintToFloatRoundDown(node.dataSize);
+            uint32_t binIndex = SmallFloat::uintToFloatRoundDown(node.dataSize);
             
-            uint32 topBinIndex = binIndex >> TOP_BINS_INDEX_SHIFT;
-            uint32 leafBinIndex = binIndex & LEAF_BINS_INDEX_MASK;
+            uint32_t topBinIndex = binIndex >> TOP_BINS_INDEX_SHIFT;
+            uint32_t leafBinIndex = binIndex & LEAF_BINS_INDEX_MASK;
             
             m_binIndices[binIndex] = node.binListNext;
             if (node.binListNext != Node::unused) m_nodes[node.binListNext].binListPrev = Node::unused;
@@ -438,7 +438,7 @@ namespace OffsetAllocator
 #endif
     }
 
-    uint32 Allocator::allocationSize(Allocation allocation) const
+    uint32_t Allocator::allocationSize(Allocation allocation) const
     {
         if (allocation.metadata == Allocation::NO_SPACE) return 0;
         if (!m_nodes) return 0;
@@ -448,8 +448,8 @@ namespace OffsetAllocator
 
     StorageReport Allocator::storageReport() const
     {
-        uint32 largestFreeRegion = 0;
-        uint32 freeStorage = 0;
+        uint32_t largestFreeRegion = 0;
+        uint32_t freeStorage = 0;
         
         // Out of allocations? -> Zero free space
         if (m_freeOffset > 0)
@@ -457,8 +457,8 @@ namespace OffsetAllocator
             freeStorage = m_freeStorage;
             if (m_usedBinsTop)
             {
-                uint32 topBinIndex = 31 - lzcnt_nonzero(m_usedBinsTop);
-                uint32 leafBinIndex = 31 - lzcnt_nonzero(m_usedBins[topBinIndex]);
+                uint32_t topBinIndex = 31 - lzcnt_nonzero(m_usedBinsTop);
+                uint32_t leafBinIndex = 31 - lzcnt_nonzero(m_usedBins[topBinIndex]);
                 largestFreeRegion = SmallFloat::floatToUint((topBinIndex << TOP_BINS_INDEX_SHIFT) | leafBinIndex);
                 ASSERT(freeStorage >= largestFreeRegion);
             }
@@ -470,10 +470,10 @@ namespace OffsetAllocator
     StorageReportFull Allocator::storageReportFull() const
     {
         StorageReportFull report;
-        for (uint32 i = 0; i < NUM_LEAF_BINS; i++)
+        for (uint32_t i = 0; i < NUM_LEAF_BINS; i++)
         {
-            uint32 count = 0;
-            uint32 nodeIndex = m_binIndices[i];
+            uint32_t count = 0;
+            uint32_t nodeIndex = m_binIndices[i];
             while (nodeIndex != Node::unused)
             {
                 nodeIndex = m_nodes[nodeIndex].binListNext;
