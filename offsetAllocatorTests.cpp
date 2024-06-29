@@ -2,15 +2,11 @@
 
 #define SECTION(x)
 
-namespace OffsetAllocator
-{
-    namespace SmallFloat
-    {
-        extern uint32_t uintToFloatRoundUp(uint32_t size);
-        extern uint32_t uintToFloatRoundDown(uint32_t size);
-        extern uint32_t floatToUint(uint32_t floatValue);
-    }
-}
+namespace OffsetAllocator::SmallFloat {
+extern uint32_t uintToFloatRoundUp(uint32_t size);
+extern uint32_t uintToFloatRoundDown(uint32_t size);
+extern uint32_t floatToUint(uint32_t floatValue);
+} // namespace OffsetAllocator::SmallFloat
 
 TEST(numbers, SmallFloat)
 {
@@ -22,12 +18,12 @@ TEST(numbers, SmallFloat)
         uint32_t preciseNumberCount = 17;
         for (uint32_t i = 0; i < preciseNumberCount; i++)
         {
-            uint32_t roundUp = OffsetAllocator::SmallFloat::uintToFloatRoundUp(i);
+            uint32_t roundUp   = OffsetAllocator::SmallFloat::uintToFloatRoundUp(i);
             uint32_t roundDown = OffsetAllocator::SmallFloat::uintToFloatRoundDown(i);
             EXPECT_TRUE(i == roundUp);
             EXPECT_TRUE(i == roundDown);
         }
-            
+
         // Test some random picked numbers
         struct NumberFloatUpDown
         {
@@ -35,7 +31,7 @@ TEST(numbers, SmallFloat)
             uint32_t up;
             uint32_t down;
         };
-            
+
         NumberFloatUpDown testData[] = {
             {.number = 17, .up = 17, .down = 16},
             {.number = 118, .up = 39, .down = 38},
@@ -44,17 +40,17 @@ TEST(numbers, SmallFloat)
             {.number = 529445, .up = 137, .down = 136},
             {.number = 1048575, .up = 144, .down = 143},
         };
-            
+
         for (uint32_t i = 0; i < sizeof(testData) / sizeof(NumberFloatUpDown); i++)
         {
             NumberFloatUpDown v = testData[i];
-            uint32_t roundUp = OffsetAllocator::SmallFloat::uintToFloatRoundUp(v.number);
+            uint32_t roundUp   = OffsetAllocator::SmallFloat::uintToFloatRoundUp(v.number);
             uint32_t roundDown = OffsetAllocator::SmallFloat::uintToFloatRoundDown(v.number);
             EXPECT_TRUE(roundUp == v.up);
             EXPECT_TRUE(roundDown == v.down);
         }
     }
-        
+
     SECTION("floatToUint")
     {
         // Denorms, exp=1 and exp=2 + mantissa = 0 are all precise.
@@ -66,7 +62,7 @@ TEST(numbers, SmallFloat)
             uint32_t v = OffsetAllocator::SmallFloat::floatToUint(i);
             EXPECT_TRUE(i == v);
         }
-            
+
         // Test that float->uint->float conversion is precise for all numbers
         // NOTE: Test values < 240. 240->4G = overflows 32 bit integer
         for (uint32_t i = 0; i < 240; i++)
@@ -100,7 +96,7 @@ TEST(allocate, offsetAllocator)
         // Free merges neighbor empty nodes. Next allocation should also have offset = 0
         OffsetAllocator::Allocation a = allocator.allocate(0);
         EXPECT_TRUE(a.offset == 0);
-            
+
         OffsetAllocator::Allocation b = allocator.allocate(1);
         EXPECT_TRUE(b.offset == 0);
 
@@ -114,7 +110,7 @@ TEST(allocate, offsetAllocator)
         allocator.free(b);
         allocator.free(c);
         allocator.free(d);
-            
+
         // End: Validate that allocator has no fragmentation left. Should be 100% clean.
         OffsetAllocator::Allocation validateAll = allocator.allocate(1024 * 1024 * 256);
         EXPECT_TRUE(validateAll.offset == 0);
@@ -127,11 +123,11 @@ TEST(allocate, offsetAllocator)
         OffsetAllocator::Allocation a = allocator.allocate(1337);
         EXPECT_TRUE(a.offset == 0);
         allocator.free(a);
-            
+
         OffsetAllocator::Allocation b = allocator.allocate(1337);
         EXPECT_TRUE(b.offset == 0);
         allocator.free(b);
-            
+
         // End: Validate that allocator has no fragmentation left. Should be 100% clean.
         OffsetAllocator::Allocation validateAll = allocator.allocate(1024 * 1024 * 256);
         EXPECT_TRUE(validateAll.offset == 0);
@@ -154,7 +150,7 @@ TEST(allocate, offsetAllocator)
 
         allocator.free(c);
         allocator.free(b);
-            
+
         // End: Validate that allocator has no fragmentation left. Should be 100% clean.
         OffsetAllocator::Allocation validateAll = allocator.allocate(1024 * 1024 * 256);
         EXPECT_TRUE(validateAll.offset == 0);
@@ -190,7 +186,7 @@ TEST(allocate, offsetAllocator)
         allocator.free(d);
         allocator.free(b);
         allocator.free(e);
-            
+
         // End: Validate that allocator has no fragmentation left. Should be 100% clean.
         OffsetAllocator::Allocation validateAll = allocator.allocate(1024 * 1024 * 256);
         EXPECT_TRUE(validateAll.offset == 0);
@@ -240,7 +236,7 @@ TEST(allocate, offsetAllocator)
             if (i < 152 || i > 154)
                 allocator.free(allocations[i]);
         }
-            
+
         OffsetAllocator::StorageReport report2 = allocator.storageReport();
         EXPECT_TRUE(report2.totalFreeSpace == 1024 * 1024 * 256);
         EXPECT_TRUE(report2.largestFreeRegion == 1024 * 1024 * 256);
