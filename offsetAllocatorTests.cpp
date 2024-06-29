@@ -34,20 +34,20 @@ TEST(numbers, SmallFloat)
         };
 
         NumberFloatUpDown testData[] = {
-            {.number = 17, .up = 17, .down = 16},
-            {.number = 118, .up = 39, .down = 38},
-            {.number = 1024, .up = 64, .down = 64},
-            {.number = 65536, .up = 112, .down = 112},
-            {.number = 529445, .up = 137, .down = 136},
-            {.number = 1048575, .up = 144, .down = 143},
+            {.number = 17,      .up = 17,   .down = 16},
+            {.number = 118,     .up = 39,   .down = 38},
+            {.number = 1024,    .up = 64,   .down = 64},
+            {.number = 65536,   .up = 112,  .down = 112},
+            {.number = 529445,  .up = 137,  .down = 136},
+            {.number = 1048575, .up = 144,  .down = 143},
         };
 
         for (uint32_t i = 0; i < sizeof(testData) / sizeof(NumberFloatUpDown); i++)
         {
             NumberFloatUpDown v = testData[i];
-            uint32_t roundUp   = OffsetAllocator::SmallFloat::uintToFloatRoundUp(v.number);
-            uint32_t roundDown = OffsetAllocator::SmallFloat::uintToFloatRoundDown(v.number);
-            EXPECT_TRUE(roundUp == v.up);
+            uint32_t roundUp    = OffsetAllocator::SmallFloat::uintToFloatRoundUp(v.number);
+            uint32_t roundDown  = OffsetAllocator::SmallFloat::uintToFloatRoundDown(v.number);
+            EXPECT_TRUE(roundUp   == v.up);
             EXPECT_TRUE(roundDown == v.down);
         }
     }
@@ -68,8 +68,8 @@ TEST(numbers, SmallFloat)
         // NOTE: Test values < 240. 240->4G = overflows 32 bit integer
         for (uint32_t i = 0; i < 240; i++)
         {
-            uint32_t v = OffsetAllocator::SmallFloat::floatToUint(i);
-            uint32_t roundUp = OffsetAllocator::SmallFloat::uintToFloatRoundUp(v);
+            uint32_t v         = OffsetAllocator::SmallFloat::floatToUint(i);
+            uint32_t roundUp   = OffsetAllocator::SmallFloat::uintToFloatRoundUp(v);
             uint32_t roundDown = OffsetAllocator::SmallFloat::uintToFloatRoundDown(v);
             EXPECT_TRUE(i == roundUp);
             EXPECT_TRUE(i == roundDown);
@@ -239,7 +239,7 @@ TEST(allocate, offsetAllocator)
         }
 
         OffsetAllocator::StorageReport report2 = allocator.storageReport();
-        EXPECT_TRUE(report2.totalFreeSpace == 1024 * 1024 * 256);
+        EXPECT_TRUE(report2.totalFreeSpace    == 1024 * 1024 * 256);
         EXPECT_TRUE(report2.largestFreeRegion == 1024 * 1024 * 256);
 
         // End: Validate that allocator has no fragmentation left. Should be 100% clean.

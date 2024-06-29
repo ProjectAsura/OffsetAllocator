@@ -43,8 +43,7 @@ uint32_t uintToFloatRoundUp(uint32_t size)
     else
     {
         // Normalized: Hidden high bit always 1. Not stored. Just like float.
-        uint32_t highestSetBit = 31 - std::countl_zero(size);
-
+        uint32_t highestSetBit    = 31 - std::countl_zero(size);
         uint32_t mantissaStartBit = highestSetBit - MANTISSA_BITS;
         exp = mantissaStartBit + 1;
         mantissa = (size >> mantissaStartBit) & MANTISSA_MASK;
@@ -55,7 +54,7 @@ uint32_t uintToFloatRoundUp(uint32_t size)
         if ((size & lowBitsMask) != 0)
             mantissa++;
     }
-            
+
     return (exp << MANTISSA_BITS) + mantissa; // + allows mantissa->exp overflow for round up
 }
 
@@ -72,8 +71,7 @@ uint32_t uintToFloatRoundDown(uint32_t size)
     else
     {
         // Normalized: Hidden high bit always 1. Not stored. Just like float.
-        uint32_t highestSetBit = 31 - std::countl_zero(size);
-
+        uint32_t highestSetBit    = 31 - std::countl_zero(size);
         uint32_t mantissaStartBit = highestSetBit - MANTISSA_BITS;
         exp = mantissaStartBit + 1;
         mantissa = (size >> mantissaStartBit) & MANTISSA_MASK;
@@ -146,7 +144,7 @@ void Allocator::reset()
 {
     m_freeStorage = 0;
     m_usedBinsTop = 0;
-    m_freeOffset  = m_maxAllocsCount - 1;
+    m_freeOffset  = int64_t(m_maxAllocsCount - 1);
 
     for (uint32_t i = 0 ; i < NUM_TOP_BINS; i++)
         m_usedBins[i] = 0;
