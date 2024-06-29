@@ -1,3 +1,4 @@
+#include <vector>
 #include "offsetAllocator.hpp"
 
 #define SECTION(x)
@@ -192,7 +193,7 @@ TEST(allocate, offsetAllocator)
         EXPECT_TRUE(validateAll.offset == 0);
         allocator.free(validateAll);
     }
-        
+
     SECTION("zero fragmentation")
     {
         // Allocate 256x 1MB. Should fit. Then free four random slots and reallocate four slots.
@@ -221,14 +222,14 @@ TEST(allocate, offsetAllocator)
         allocator.free(allocations[154]);
 
         allocations[243] = allocator.allocate(1024 * 1024);
-        allocations[5] = allocator.allocate(1024 * 1024);
+        allocations[5]   = allocator.allocate(1024 * 1024);
         allocations[123] = allocator.allocate(1024 * 1024);
-        allocations[95] = allocator.allocate(1024 * 1024);
+        allocations[95]  = allocator.allocate(1024 * 1024);
         allocations[151] = allocator.allocate(1024 * 1024 * 4); // 4x larger
         EXPECT_TRUE(allocations[243].offset != OffsetAllocator::Allocation::NO_SPACE);
-        EXPECT_TRUE(allocations[5].offset != OffsetAllocator::Allocation::NO_SPACE);
+        EXPECT_TRUE(allocations[5]  .offset != OffsetAllocator::Allocation::NO_SPACE);
         EXPECT_TRUE(allocations[123].offset != OffsetAllocator::Allocation::NO_SPACE);
-        EXPECT_TRUE(allocations[95].offset != OffsetAllocator::Allocation::NO_SPACE);
+        EXPECT_TRUE(allocations[95] .offset != OffsetAllocator::Allocation::NO_SPACE);
         EXPECT_TRUE(allocations[151].offset != OffsetAllocator::Allocation::NO_SPACE);
 
         for (uint32_t i = 0; i < 256; i++)
@@ -245,5 +246,61 @@ TEST(allocate, offsetAllocator)
         OffsetAllocator::Allocation validateAll = allocator.allocate(1024 * 1024 * 256);
         EXPECT_TRUE(validateAll.offset == 0);
         allocator.free(validateAll);
+    }
+
+    SECTION("boundary check")
+    {
+        allocator.reset();
+        auto report = allocator.storageReport();
+        EXPECT_EQ(report.totalFreeSpace,    uint32_t(1024 * 1024 * 256));
+        EXPECT_EQ(report.largestFreeRegion, uint32_t(1024 * 1024 * 256));
+
+        auto allocation = allocator.allocate(1024 * 1024 * 256);
+        EXPECT_EQ(allocation.offset, 0u);
+
+        report = allocator.storageReport();
+        EXPECT_EQ(report.totalFreeSpace,    0u);
+        EXPECT_EQ(report.largestFreeRegion, 0u);
+
+        allocator.free(allocation);
+        report = allocator.storageReport();
+        EXPECT_EQ(report.totalFreeSpace,    uint32_t(1024 * 1024 * 256));
+        EXPECT_EQ(report.largestFreeRegion, uint32_t(1024 * 1024 * 256));
+
+        constexpr uint32_t maxAllocs = 128  * 1024;
+        constexpr uint32_t unitSize  = 1024 * 1024 * 256 / maxAllocs;
+
+        std::vector<OffsetAllocator::Allocation> handles;
+        handles.resize(maxAllocs);
+
+        for(uint32_t i=0; i<maxAllocs; ++i)
+        {
+            handles[i] = allocator.allocate(unitSize);
+            auto& h = handles[i];
+            EXPECT_EQ(h.offset, i * unitSize);
+            EXPECT_TRUE(h.metadata != OffsetAllocator::Allocation::NO_SPACE);
+        }
+
+        report = allocator.storageReport();
+        EXPECT_EQ(report.totalFreeSpace,    0u);
+        EXPECT_EQ(report.largestFreeRegion, 0u);
+
+        for(size_t i=0; i<maxAllocs; ++i)
+        {
+            allocator.free(handles[i]);
+        }
+
+        report = allocator.storageReport();
+        EXPECT_EQ(report.totalFreeSpace,    uint32_t(1024 * 1024 * 256));
+        EXPECT_EQ(report.largestFreeRegion, uint32_t(1024 * 1024 * 256));
+
+        allocation = allocator.allocate(4);
+        EXPECT_EQ(allocation.offset, 0u);
+        EXPECT_EQ(allocator.allocationSize(allocation), 4u);
+
+        allocator.free(allocation);
+
+        handles.clear();
+        handles.shrink_to_fit();
     }
 }

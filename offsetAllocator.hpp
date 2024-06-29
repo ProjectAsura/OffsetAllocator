@@ -43,15 +43,15 @@ struct StorageReportFull
         uint32_t size;
         uint32_t count;
     };
-        
+
     Region freeRegions[NUM_LEAF_BINS];
 };
 
 class Allocator
 {
 public:
-    Allocator(uint32_t size, uint32_t maxAllocs = 128 * 1024);
-    Allocator(Allocator &&other);
+    Allocator(uint32_t size, uint32_t maxAllocsCount = 128 * 1024);
+    Allocator(Allocator &&other) noexcept;
     ~Allocator();
     void reset();
 
@@ -80,7 +80,7 @@ private:
     };
 
     uint32_t    m_size;
-    uint32_t    m_maxAllocs;
+    uint32_t    m_maxAllocsCount;
     uint32_t    m_freeStorage;
 
     uint32_t    m_usedBinsTop;
@@ -89,7 +89,7 @@ private:
  
     Node*       m_nodes;
     NodeIndex*  m_freeNodes;
-    uint32_t    m_freeOffset;
+    int64_t     m_freeOffset;
 };
 
 } // namespace OffsetAllocator
