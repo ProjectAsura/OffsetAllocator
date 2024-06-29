@@ -2,9 +2,10 @@
 // MIT License (see file: LICENSE)
 
 #include "offsetAllocator.hpp"
+#include <bit>
 
 #ifdef DEBUG
-#include <assert.h>
+#include <cassert>
 #define ASSERT(x) assert(x)
 //#define DEBUG_VERBOSE
 #else
@@ -12,11 +13,7 @@
 #endif
 
 #ifdef DEBUG_VERBOSE
-#include <stdio.h>
-#endif
-
-#ifdef _MSC_VER
-#include <intrin.h>
+#include <cstdio>
 #endif
 
 #include <cstring>
@@ -25,24 +22,12 @@ namespace OffsetAllocator
 {
     inline uint32_t lzcnt_nonzero(uint32_t v)
     {
-#ifdef _MSC_VER
-        unsigned long retVal;
-        _BitScanReverse(&retVal, v);
-        return 31 - retVal;
-#else
-        return __builtin_clz(v);
-#endif
+        return std::countl_zero(v);
     }
 
     inline uint32_t tzcnt_nonzero(uint32_t v)
     {
-#ifdef _MSC_VER
-        unsigned long retVal;
-        _BitScanForward(&retVal, v);
-        return retVal;
-#else
-        return __builtin_ctz(v);
-#endif
+        return std::countr_zero(v);
     }
 
     namespace SmallFloat
