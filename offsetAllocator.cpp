@@ -110,7 +110,7 @@ static uint32_t findLowestSetBitAfter(uint32_t bitMask, uint32_t startBitIndex)
 // Allocator...
 Allocator::Allocator(uint32_t size, uint32_t maxAllocsCount)
 : m_size            (size)
-, m_maxAllocsCount  (maxAllocsCount + 1)
+, m_maxAllocsCount  (maxAllocsCount)
 , m_nodes           (nullptr)
 , m_freeNodes       (nullptr)
 {
@@ -144,7 +144,7 @@ void Allocator::reset()
 {
     m_freeStorage = 0;
     m_usedBinsTop = 0;
-    m_freeOffset  = int64_t(m_maxAllocsCount - 1);
+    m_freeOffset  = int64_t(m_maxAllocsCount);
 
     for (uint32_t i = 0 ; i < NUM_TOP_BINS; i++)
         m_usedBins[i] = 0;
@@ -157,13 +157,13 @@ void Allocator::reset()
     if (m_freeNodes)
         delete[] m_freeNodes;
 
-    m_nodes     = new Node     [m_maxAllocsCount];
-    m_freeNodes = new NodeIndex[m_maxAllocsCount];
+    m_nodes     = new Node     [m_maxAllocsCount + 1];
+    m_freeNodes = new NodeIndex[m_maxAllocsCount + 1];
 
     // Freelist is a stack. Nodes in inverse order so that [0] pops first.
-    for (uint32_t i = 0; i < m_maxAllocsCount; i++)
+    for (uint32_t i = 0; i <= m_maxAllocsCount; i++)
     {
-        m_freeNodes[i] = m_maxAllocsCount - i - 1;
+        m_freeNodes[i] = m_maxAllocsCount - i;
     }
 
     // Start state: Whole storage as one big node
